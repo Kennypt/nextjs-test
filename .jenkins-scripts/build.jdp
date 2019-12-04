@@ -44,7 +44,7 @@ pipeline {
           // Determine version number for next release.
           def versionSuffix = ""
           def pkgVersion = sh (
-            script: 'git tag --list | sort --version-sort --reverse | head -n1',
+            script: 'git describe --tags $(git rev-list --tags --max-count=1)',
             returnStdout: true
           ).trim()
 
