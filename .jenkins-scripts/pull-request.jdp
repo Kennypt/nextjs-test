@@ -1,13 +1,16 @@
 pipeline {
   agent any
 
-  // tools {nodejs "node"}
+  environment {
+    // TODO: Read from .nvmrc
+    NVM_VERSION = '12.0.0'
+  }
 
   stages {
     stage('Prepare') {
       steps {
         // checkout scm
-        nvm('12.0.0') {
+        nvm(env.NVM_VERSION) {
           sh 'npm i'
         }
       }
@@ -15,7 +18,7 @@ pipeline {
 
     stage('Lint') {
       steps {
-        nvm('12.0.0') {
+        nvm(env.NVM_VERSION) {
           sh 'npm run prettier && npm run lint'
         }
       }
@@ -23,7 +26,7 @@ pipeline {
 
     stage('Test') {
       steps {
-        nvm('12.0.0') {
+        nvm(env.NVM_VERSION) {
           sh 'npm run test'
         }
       }

@@ -1,10 +1,16 @@
 pipeline {
   agent any
 
+  environment {
+    // TODO: Read from .nvmrc
+    NVM_VERSION = '12.0.0'
+    PACKAGE_VERSION = ''
+  }
+
   stages {
     stage('Prepare') {
       steps {
-        nvm('12.0.0') {
+        nvm(env.NVM_VERSION) {
           sh 'npm i'
         }
       }
@@ -12,38 +18,37 @@ pipeline {
 
     stage('Lint') {
       steps {
-        sh 'npm run prettier && npm run lint'
+        nvm(env.NVM_VERSION) {
+          sh 'npm run prettier && npm run lint'
+        }
       }
     }
 
     stage('Test') {
       steps {
-        sh 'npm run test'
+        nvm(env.NVM_VERSION) {
+          sh 'npm run test'
+        }
       }
     }
 
     stage('Build') {
       steps {
-        sh 'npm run build'
+        nvm(env.NVM_VERSION) {
+          sh 'npm run build'
+        }
       }
     }
 
-    stage('Version') {
+    stage('Package') {
       steps {
         script {
-          // Determine version number for next release.
+          // Generate build version
           def versionSuffix = ""
           def pkgVersion = sh (
             script: 'git describe --tags $(git rev-list --tags --max-count=1)',
             returnStdout: true
           ).trim()
-
-          def nodev = sh (
-            script: 'node -v',
-            returnStdout: true
-          ).trim()
-
-          echo "node version ${nodev}"
 
           echo "Current package version ${pkgVersion}"
 
@@ -51,9 +56,23 @@ pipeline {
           if (versionSuffix != "") {
               newPkgVersion = newPkgVersion + "-" + versionSuffix
           }
+
           echo "Building and testing ${newPkgVersion}"
+
+          // Add build tag
+          sh "git tag ${newPkgVersion}"
+          sh "git push --tags"
+
+          // Generate package
+          sh "mkdir -p package"
+          sh "tar -czvf ./package/${newPkgVersion} ./app/.next"
         }
       }
+    }
+  }
+  post {
+    success {
+        archiveArtifacts artifacts: 'package/*', onlyIfSuccessful: true
     }
   }
 }
@@ -61,7 +80,6 @@ pipeline {
 // Increment the minor part of a `MAJOR.MINOR.PATCH` semver version.
 String bumpMinorVersion(String version) {
     def parts = version.tokenize('.')
-    echo "Parts ${parts}"
     if (parts.size() != 3) {
         error "${version} is not a valid MAJOR.MINOR.PATCH version"
     }
