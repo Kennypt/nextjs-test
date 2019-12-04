@@ -1,16 +1,12 @@
 pipeline {
   agent any
 
-  // tools {nodejs "node"}
-  node(null) {
-    nvm('12.0.0') {
-    }
-  }
-
   stages {
     stage('Prepare') {
       steps {
-        sh 'npm i'
+        nvm('12.0.0') {
+          sh 'npm i'
+        }
       }
     }
 
@@ -41,6 +37,13 @@ pipeline {
             script: 'git describe --tags $(git rev-list --tags --max-count=1)',
             returnStdout: true
           ).trim()
+
+          def nodev = sh (
+            script: 'node -v',
+            returnStdout: true
+          ).trim()
+
+          echo "node version ${nodev}"
 
           echo "Current package version ${pkgVersion}"
 
