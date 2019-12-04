@@ -7,7 +7,10 @@ pipeline {
     stage('Prepare') {
       steps {
         nvm('12.0.0')
-        sh 'npm i'
+        node {
+          checkout scm
+          sh 'npm i'
+        }
       }
     }
 
