@@ -48,6 +48,8 @@ pipeline {
             returnStdout: true
           ).trim()
 
+          echo "Current package version ${pkgVersion}"
+
           def newPkgVersion = bumpMinorVersion(pkgVersion)
           if (versionSuffix != "") {
               newPkgVersion = newPkgVersion + "-" + versionSuffix
@@ -62,6 +64,7 @@ pipeline {
 // Increment the minor part of a `MAJOR.MINOR.PATCH` semver version.
 String bumpMinorVersion(String version) {
     def parts = version.tokenize('.')
+    echo "Parts ${parts}"
     if (parts.size() != 3) {
         error "${version} is not a valid MAJOR.MINOR.PATCH version"
     }
