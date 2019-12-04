@@ -69,21 +69,35 @@ pipeline {
           sh "git tag -a ${env.newPkgVersion}  -m 'Jenkins'"
           sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Kennypt/nextjs-test.git --tags"
         }
+
+        // TODO: src package version bump
       }
     }
 
     stage('Package') {
       steps {
-        // Generate package
-        sh "mkdir -p package"
-        sh "tar -czvf ./package/${env.newPkgVersion} ./app/.next"
+        script {
+          // Generate package
+          sh "mkdir -p package"
+          sh "tar -czvf ./package/${env.newPkgVersion} ."
+        }
+        archiveArtifacts artifacts: 'package/*', onlyIfSuccessful: true
+      }
+    }
+
+    stage ('Deploy to test') {
+      steps {
+        build job: 'deploy', parameters: [
+          [$class: 'StringParameterValue', name: 'BUILD_VERSION', value: "v${env.newPkgVersion}"],
+          [$class: 'StringParameterValue', name: 'ENVIRONMENT', value: "TEST"]
+        ]
       }
     }
   }
   post {
     success {
-      archiveArtifacts artifacts: 'package/*', onlyIfSuccessful: true
-      // TODO: Trigger deploy pipeline to TEST
+      echo "success!"
+      // TODO: Notify channel
     }
     failure {
       echo "failed!"

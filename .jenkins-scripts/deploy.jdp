@@ -9,56 +9,33 @@ pipeline {
   stages {
     stage('Validate release') {
       steps {
-        copyArtifacts filter: 'package/*', fingerprintArtifacts: true, selector: specific(params.BUILD_VERSION), projectName: 'build-master'
+        copyArtifacts filter: "package/1.11.0", fingerprintArtifacts: true, selector: specific(params.BUILD_VERSION), projectName: 'build-master'
+        sh "ls -ltra"
       }
     }
 
     stage('Deploy') {
       steps {
-        writeFile file: 'known_hosts', text: '35.204.225.91 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBP1nn8ISV4RqplDmyGw+hAoQhbb7qEMBOHKkTmhw+7JcPWffVMolz/OY7Bby7xqxVrwNhzA19qkHR2lfVhdn3VY='
-        withCredentials([sshUserPrivateKey(credentialsId: 'gcloud-test-ssh', keyFileVariable: 'identity', passphraseVariable: '', usernameVariable: 'userName')]) {
+        withCredentials([usernamePassword(credentialsId: 'gcloud-user-pwd', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
           script {
-            def workspace = pwd()
+            //def workspace = pwd()
             def remote = [:]
             remote.name = '35.204.225.91'
             remote.host = '35.204.225.91'
-            remote.user = "jenkins"
-            remote.identity = """-----BEGIN OPENSSH PRIVATE KEY-----" \
-b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABFwAAAAdzc2gtcn" \
-NhAAAAAwEAAQAAAQEAuxeh7OGjrDViEIDRYX6oOZrvq7Sc0X9kDL1PSBRcfha5CXCDVtaW" \
-6Tqjvm2xd0UfN7W0mZnMTEky65UclAJPQp33K5m/gT1Ww43+1YkhhiDigazhGnildpl0ee" \
-3xCqGSRR6+ACGAOnlGNZbFVshvIYjSz4YciEXHjh6DUCRHu6IAPtd8blYQE16x5zFWc/mT" \
-sOOpeV4ktlq/tRwSmVccdEUnAanDLYIHxS33jagz/SlRgwYM4Xg5oYH+hhKfXnTgSCJvJg" \
-y7eGAgGZEr/4J0ZrLODKSfcoJ+pMuhYkyBPftcH9mbZq+K9STfA548r4dXdAV43GyaGIu7" \
-I9ioPpuBZQAAA8CLvQKpi70CqQAAAAdzc2gtcnNhAAABAQC7F6Hs4aOsNWIQgNFhfqg5mu" \
-+rtJzRf2QMvU9IFFx+FrkJcINW1pbpOqO+bbF3RR83tbSZmcxMSTLrlRyUAk9Cnfcrmb+B" \
-PVbDjf7ViSGGIOKBrOEaeKV2mXR57fEKoZJFHr4AIYA6eUY1lsVWyG8hiNLPhhyIRceOHo" \
-NQJEe7ogA+13xuVhATXrHnMVZz+ZOw46l5XiS2Wr+1HBKZVxx0RScBqcMtggfFLfeNqDP9" \
-KVGDBgzheDmhgf6GEp9edOBIIm8mDLt4YCAZkSv/gnRmss4MpJ9ygn6ky6FiTIE9+1wf2Z" \
-tmr4r1JN8Dnjyvh1d0BXjcbJoYi7sj2Kg+m4FlAAAAAwEAAQAAAQBhOAONeya4yridiMLE" \
-nbM+09Ls75p5hm/v6sNy2hnB737Rd+TX0AR1R2JlBs0sBAAXy9T/6BpwHa1XG5HRG24iWM" \
-Fip68KslwOnA+q2GpSL25kIfiK79xTR6Rt44XYl2LRhgsHOGFQgUpJeIIs+VQ+IcIh0jer" \
-XE84+4QStfeMeNqYcVeb8/3O5Q6rBbyhvglC3rGzPRHOaMfIQQeT9HiSP7uQZn/1kGWC58" \
-P5iYUQCG/wN+LpFHuYzqNZ30nMq8D5DYLcKBr0LGmKWiEv7Pit/7QMfM7TF8w+Hd1Q1zBx" \
-Xo+jMPN6Fv+nERJoLznYVKkWw9Jvdsj88pbV9ijL5AlBAAAAgQCdd1AwkNfVzndbpj13nJ" \
-jcETM+eiiXQI5Gr/Q4hHXCxOwq0Kd6MOwPFgbP2b6SGh2Xibt1QEyx+WHZgrE3hAIIyGYR" \
-NoxUIYoTl1IIeKgmTV7vnEp6eXFP6VcT1N+V5J0XPtMSqO6kxT2ogWr5/R6WaZ21wMSmNC" \
-5GpwA7555QwgAAAIEA8NdSidg2UL2VvLQGlMa0+BvG1RbhYZyKKiyXlTRn7vYnGa8Ajf0o" \
-F43Nvec6gBm/vp7FLwiigljEgCcVlU+T94FRuicZbOQpxTqXtccjJKExLzWI1Y3/twAmwe" \
-9KW+qCBWGhdgHDc0YBgImPWORZaWijJIsp4Wkc4vY7yGXjmfEAAACBAMbeQTlrVNA/8NzX" \
-54/79BzszTuRJ/tyUYiadIJojLpSrEPKud0A5lZlYwuJedLRUndKdZGutnRCFe7TRofI0j" \
-VNvwy1rhZXHesk08YVQ/taXhnhlrNsnv1U/Yz1B83dvR8xQkgla6HUAyldkCI6T4dgz5GN" \
-AY75XF5hKJtdMEq1AAAAB2plbmtpbnMBAgM=" \
------END OPENSSH PRIVATE KEY-----"""
-            remote.knownHosts = "${workspace}/known_hosts"
+            remote.user = USERNAME
+            //remote.identity = identity
+            remote.password = PASSWORD
+            remote.allowAnyHosts=true
+            remote.filetransfer = 'SCP'
+            // remote.knownHosts = "${workspace}/known_hosts"
 
             sshCommand remote: remote, command: "rm -rf /var/www/temp_deploy/dist/"
-            sshCommand remote: remote, command: "mkdir -p /var/www/temp_deploy"
+            sshCommand remote: remote, command: "mkdir -p /var/www/temp_deploy/dist/"
+            sshCommand remote: remote, command: "mkdir -p /var/www/app"
+            sshPut remote: remote, from: "package/1.11.0", into: '/var/www/temp_deploy/dist/1.11.0'
+            sshCommand remote: remote, command: "tar -zxvf /var/www/temp_deploy/dist/1.11.0 -C /var/www/app"
+            sshCommand remote: remote, command: "cd /var/www/app && npm start"
           }
-
-          //sh "ssh -i ${SSH_PRIVATE_KEY} jenkins@35.204.225.91 rm -rf /var/www/temp_deploy/dist/"
-          //sh "ssh -i ${SSH_PRIVATE_KEY} jenkins@35.204.225.91 mkdir -p /var/www/temp_deploy"
-          //sh "scp -i ${SSH_PRIVATE_KEY} package/* jenkins@35.204.225.91:/var/www/temp_deploy/dist/"
         }
       }
     }
