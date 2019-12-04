@@ -1,0 +1,17 @@
+pipeline {
+  agent any
+
+  stages {
+    stage('Prepare') {
+      steps {
+        env.nvmVersion = readfile('.nvmrc')
+        // checkout scm
+        nvm(env.nvmVersion) {
+          sh 'npm i'
+        }
+      }
+    }
+  }
+
+  // TODO: Implement...
+}
