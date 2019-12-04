@@ -4,7 +4,10 @@ pipeline {
   stages {
     stage('Prepare') {
       steps {
-        nvm('12.0.0') {
+        script {
+          env.nvmVersion = readFile('.nvmrc').trim()
+        }
+        nvm(env.nvmVersion) {
           sh 'npm i'
         }
       }
@@ -12,38 +15,37 @@ pipeline {
 
     stage('Lint') {
       steps {
-        sh 'npm run prettier && npm run lint'
+        nvm(env.nvmVersion) {
+          sh 'npm run prettier && npm run lint'
+        }
       }
     }
 
     stage('Test') {
       steps {
-        sh 'npm run test'
+        nvm(env.nvmVersion) {
+          sh 'npm run test'
+        }
       }
     }
 
     stage('Build') {
       steps {
-        sh 'npm run build'
+        nvm(env.nvmVersion) {
+          sh 'npm run build'
+        }
       }
     }
 
     stage('Version') {
       steps {
         script {
-          // Determine version number for next release.
+          // Generate build version
           def versionSuffix = ""
           def pkgVersion = sh (
             script: 'git describe --tags $(git rev-list --tags --max-count=1)',
             returnStdout: true
           ).trim()
-
-          def nodev = sh (
-            script: 'node -v',
-            returnStdout: true
-          ).trim()
-
-          echo "node version ${nodev}"
 
           echo "Current package version ${pkgVersion}"
 
@@ -51,9 +53,45 @@ pipeline {
           if (versionSuffix != "") {
               newPkgVersion = newPkgVersion + "-" + versionSuffix
           }
-          echo "Building and testing ${newPkgVersion}"
+
+          echo "New package version ${newPkgVersion}"
+          env.newPkgVersion = newPkgVersion
+
+          currentBuild.displayName = "v${newPkgVersion}"
+          currentBuild.description = "Build version ${newPkgVersion}."
+        }
+        // Add build tag
+        withCredentials([usernamePassword(credentialsId: 'gitkennyptprpwd', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+          // TODO: Replace user
+          sh "git config --global user.name 'Kennypt'"
+          sh "git config --global user.email 'ricardo.pinheiro@mindera.com'"
+
+          sh "git tag -a ${env.newPkgVersion}  -m 'Jenkins'"
+          sh "git push https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/Kennypt/nextjs-test.git --tags"
         }
       }
+    }
+
+    stage('Package') {
+      steps {
+        // Generate package
+        sh "mkdir -p package"
+        sh "tar -czvf ./package/${env.newPkgVersion} ./app/.next"
+      }
+    }
+  }
+  post {
+    success {
+      archiveArtifacts artifacts: 'package/*', onlyIfSuccessful: true
+    }
+    failure {
+      echo "failed!"
+      // TODO: Delete tags
+    }
+    cleanup {
+      sh "rm -rf package"
+      sh "rm -rf app/.next"
+      sh "rm -rf node_modules"
     }
   }
 }
@@ -61,7 +99,6 @@ pipeline {
 // Increment the minor part of a `MAJOR.MINOR.PATCH` semver version.
 String bumpMinorVersion(String version) {
     def parts = version.tokenize('.')
-    echo "Parts ${parts}"
     if (parts.size() != 3) {
         error "${version} is not a valid MAJOR.MINOR.PATCH version"
     }

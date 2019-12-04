@@ -1,0 +1,24 @@
+pipeline {
+  agent any
+
+  parameters {
+    // TODO: Add support for last
+    string(defaultValue: "last", description: 'What build version?', name: 'buildVersion')
+    choice(choices: ['TEST', 'STAGING', 'PRODUCTION'], description: 'What environment?', name: 'environment')
+  }
+
+  stages {
+    stage('Prepare') {
+      steps {
+        script {
+          env.nvmVersion = readFile('.nvmrc').trim()
+        }
+        nvm(env.nvmVersion) {
+          sh 'npm i'
+        }
+      }
+    }
+  }
+
+  // TODO: Implement...
+}
