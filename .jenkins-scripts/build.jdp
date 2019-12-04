@@ -33,6 +33,7 @@ pipeline {
     stage('Build') {
       steps {
         nvm('12.0.0') {
+          sh 'npm prune --production'
           sh 'npm run build'
         }
       }
