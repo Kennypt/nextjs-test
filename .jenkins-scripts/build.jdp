@@ -3,6 +3,7 @@ pipeline {
 
   // tools {nodejs "node"}
 
+
   stages {
     stage('Prepare') {
       steps {
@@ -37,10 +38,34 @@ pipeline {
       }
     }
 
-    stage('Generate version') {
+    stage('Version') {
       steps {
-        echo 'generate version'
+        script {
+          // Determine version number for next release.
+          def versionSuffix = ""
+          def pkgVersion = sh (
+            script: 'git tag --list | sort --version-sort --reverse | head -n1 | tail -c +2',
+            returnStdout: true
+          ).trim()
+
+          def newPkgVersion = bumpMinorVersion(pkgVersion)
+          if (versionSuffix != "") {
+              newPkgVersion = newPkgVersion + "-" + versionSuffix
+          }
+        }
+        echo "Building and testing ${newPkgVersion}"
       }
     }
   }
+}
+
+// Increment the minor part of a `MAJOR.MINOR.PATCH` semver version.
+String bumpMinorVersion(String version) {
+    def parts = version.tokenize('.')
+    if (parts.size() != 3) {
+        error "${version} is not a valid MAJOR.MINOR.PATCH version"
+    }
+    def newMinorVersion = parts[1].toInteger() + 1
+
+    return "${parts[0]}.${newMinorVersion}.${parts[2]}"
 }
