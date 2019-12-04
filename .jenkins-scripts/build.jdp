@@ -79,7 +79,7 @@ pipeline {
         script {
           // Generate package
           sh "mkdir -p package"
-          sh "tar -czvf ./package/${env.newPkgVersion} ."
+          sh "tar --exclude='.git' -czvf ./package/${env.newPkgVersion} ."
         }
         archiveArtifacts artifacts: 'package/*', onlyIfSuccessful: true
       }
@@ -87,10 +87,12 @@ pipeline {
 
     stage ('Deploy to test') {
       steps {
-        build job: 'deploy', parameters: [
-          [$class: 'StringParameterValue', name: 'BUILD_VERSION', value: "v${env.newPkgVersion}"],
-          [$class: 'StringParameterValue', name: 'ENVIRONMENT', value: "TEST"]
-        ]
+        catchError {
+          build job: 'deploy', parameters: [
+            [$class: 'StringParameterValue', name: 'BUILD_VERSION', value: "v${env.newPkgVersion}"],
+            [$class: 'StringParameterValue', name: 'ENVIRONMENT', value: "TEST"]
+          ]
+        }
       }
     }
   }
