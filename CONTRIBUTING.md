@@ -1,4 +1,4 @@
-# Update6 - Thanks for being interested in contributing! We're so glad you want to help!
+# Update7 - Thanks for being interested in contributing! We're so glad you want to help!
 
 Below you'll find guides on the `react-next-boilerplate` community, code of conduct, and how to get started with contributing:
 
