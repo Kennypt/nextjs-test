@@ -2,39 +2,33 @@ pipeline {
   agent any
 
   // tools {nodejs "node"}
-
+  node(null) {
+    nvm('12.0.0') {
+    }
+  }
 
   stages {
     stage('Prepare') {
       steps {
-        // checkout scm
-        nvm('12.0.0') {
-          sh 'npm i'
-        }
+        sh 'npm i'
       }
     }
 
     stage('Lint') {
       steps {
-        nvm('12.0.0') {
-          sh 'npm run prettier && npm run lint'
-        }
+        sh 'npm run prettier && npm run lint'
       }
     }
 
     stage('Test') {
       steps {
-        nvm('12.0.0') {
-          sh 'npm run test'
-        }
+        sh 'npm run test'
       }
     }
 
     stage('Build') {
       steps {
-        nvm('12.0.0') {
-          sh 'npm run build'
-        }
+        sh 'npm run build'
       }
     }
 
@@ -54,8 +48,8 @@ pipeline {
           if (versionSuffix != "") {
               newPkgVersion = newPkgVersion + "-" + versionSuffix
           }
+          echo "Building and testing ${newPkgVersion}"
         }
-        echo "Building and testing ${newPkgVersion}"
       }
     }
   }
