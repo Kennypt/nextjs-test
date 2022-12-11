@@ -30,7 +30,7 @@
     "@zeit/next-sass": "^1.0.1",
     "babel-plugin-dynamic-import-node": "^2.3.0",
     "clsx": "^1.0.4",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "hoist-non-react-statics": "3.3.0",
     "i18next": "^17.0.18",
     "invariant": "2.2.4",
